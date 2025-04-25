@@ -50,6 +50,7 @@ def main_game():
 
     # Kecepatan gerak pipa ke kiri
     pipe_vel_x = -4
+    score = 0
 
     # Membuat 2 set pipa acak
     new_pipe_1 = get_random_pipe()
@@ -77,11 +78,20 @@ def main_game():
                 if player_y > 0:
                     player_vel_y = player_jump_acc
                     player_jump = True
-                    game_sounds['jump'].play()  # mainkan suara lompat
+                    game_sounds['jump'].play()  
+        crash_test= is_collide(player_x, player_y, upper_pipes, lower_pipes)
+        if crash_test:
+            return score
+        player_mid_pos = player_x + game_sprites['player'].get_width()/2
+        for pipe in upper_pipes:
+            pipe_mid_pos = pipe['x'] + game_sprites['pipe'][0].get_width()/2
+            if pipe_mid_pos<= player_mid_pos < pipe_mid_pos +4:
+                score +=1
+                print(f"Your score is {score}")
+                game_sounds['point'].play()
 
-        # Menambahkan gravitasi jika tidak sedang melompat
         if player_vel_y < player_max_vel_y and not player_jump:
-            player_vel_y += player_acc_y
+                    player_vel_y += player_acc_y
         if player_jump:
             player_jump = False
 
@@ -117,7 +127,12 @@ def main_game():
             upper_pipes.pop(0)
             lower_pipes.pop(0)
 
-        # Update layar dan atur FPS
+        score_font = pygame.font.SysFont('Impact', 32)
+        score_surface = score_font.render(str(score), True,(255,255,255))
+        score_rect = score_surface.get_rect()
+        score_rect.midtop = (frame_size_x/2, 32)
+        window_screen.blit(score_surface, score_rect)
+
         pygame.display.update()
         fps_controller.tick(FPS)
 
@@ -148,7 +163,14 @@ def welcome_screen():
                 pygame.display.update()
                 fps_controller.tick(FPS)
 
-# Fungsi untuk menghasilkan sepasang pipa (atas & bawah) secara acak
+def is_collide(player_x, player_y, upper_pipes, lower_pipes):
+    if player_y > frame_size_y * 0.7 or player_y <0: 
+        game_sounds['hit'].play()
+        return True     
+    return False
+
+    
+
 def get_random_pipe():
     pipe_height = game_sprites['pipe'][0].get_height()  # tinggi pipa
     offset = frame_size_y / 3  # jarak minimal antar pipa
