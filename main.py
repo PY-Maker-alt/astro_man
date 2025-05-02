@@ -13,6 +13,7 @@ frame_size_y = 511
 
 # Membuat jendela game
 window_screen = pygame.display.set_mode((frame_size_x, frame_size_y))
+high_score = 0
 
 # Dictionary untuk menyimpan gambar dan suara game
 game_sprites = {}
@@ -39,6 +40,7 @@ def main_game():
     # Posisi awal karakter
     player_x = int(frame_size_x / 5)
     player_y = int(frame_size_x / 2)
+    global high_score
     base_x = 0
 
     # Parameter untuk lompatan dan gravitasi
@@ -81,6 +83,8 @@ def main_game():
                     game_sounds['jump'].play()  
         crash_test= is_collide(player_x, player_y, upper_pipes, lower_pipes)
         if crash_test:
+            if score > high_score :
+                high_score = score
             return score
         player_mid_pos = player_x + game_sprites['player'].get_width()/2
         for pipe in upper_pipes:
@@ -136,7 +140,28 @@ def main_game():
         pygame.display.update()
         fps_controller.tick(FPS)
 
-# Fungsi untuk tampilan awal sebelum game dimulai
+def game_over_screen(score):
+    global high_score
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYDOWN and (event.key == K_RETURN or event.key == K_UP):
+                return
+            else:
+                window_screen.blit(game_sprites['background'], (0, 0))
+                text_font = pygame.font.SysFont('Impact', 24)
+                game_over_surface = text_font.render("Game Over !", True, (255,255,255))
+                score_surface = text_font.render("Score : " + str(score), True, (255,255,255))
+                continue_surface = text_font.render("Press 'ENTER' To Continue !", True, (255,255,255))
+                high_score_surface = text_font.render("High Score : " + str(high_score), True, (255,255,255))
+                window_screen.blit(game_over_surface, (80, 100))
+                window_screen.blit(score_surface, (100, 170))
+                window_screen.blit(continue_surface, (20, 230))
+                window_screen.blit(high_score_surface, (80,430))
+                pygame.display.update()
+                fps_controller.tick(FPS)
 def welcome_screen():
     # Posisi karakter pada layar selamat datang
     player_x = int(frame_size_x / 5)
@@ -167,8 +192,17 @@ def is_collide(player_x, player_y, upper_pipes, lower_pipes):
     if player_y > frame_size_y * 0.7 or player_y <0: 
         game_sounds['hit'].play()
         return True     
-    return False
 
+    for pipe in upper_pipes:
+        pipe_height = game_sprites['pipe'][0].get_height()
+        if(player_y < pipe_height + pipe['y'] and abs(player_x - pipe['x']) < game_sprites['pipe'] [0].get_width()):
+                game_sounds['hit'].play()
+                return True
+
+    for pipe in lower_pipes:
+        if (player_y + game_sprites['player'].get_height() > pipe['y']) and abs(player_x - pipe['x']) < game_sprites['pipe'][0].get_width():
+            game_sounds['hit'].play()
+            return True
     
 
 def get_random_pipe():
@@ -201,4 +235,5 @@ game_sounds['jump'] = pygame.mixer.Sound('gallery/audio/jump.wav')
 # Loop utama game: tampilkan welcome screen, lalu main game
 while True:
     welcome_screen()
-    main_game()
+    score = main_game() 
+    game_over_screen(score)
